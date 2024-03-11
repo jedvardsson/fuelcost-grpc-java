@@ -1,0 +1,31 @@
+<extension>
+    <executions>
+        <execution>
+            <id>enforce-defaults</id>
+            <configuration>
+                <rules>
+                    <requireMavenVersion>
+                        <version>
+                            3.9.4
+                        </version>
+                    </requireMavenVersion>
+                    <bannedDependencies>
+                        <excludes>
+                            <exclude>commons-logging:*:*</exclude>
+                            <exclude>log4j:log4j:*</exclude>
+                            <exclude>org.apache.logging.log4j:*:[,2.17.1]</exclude>
+                        </excludes>
+                        <searchTransitive>true</searchTransitive>
+                    </bannedDependencies>
+                    <dependencyConvergence/>
+                    <requireNoRepositories>
+                        <message>Never define repositories in pom.xml</message>
+                    </requireNoRepositories>
+                    <reactorModuleConvergence>
+                        <message>The reactor is not valid</message>
+                    </reactorModuleConvergence>
+                </rules>
+            </configuration>
+        </execution>
+    </executions>
+</extension>

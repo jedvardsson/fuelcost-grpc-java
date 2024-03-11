@@ -1,0 +1,6 @@
+# Demo API Server Tracking Vehicle Fuel Cost
+
+This is an implementation of a simple API Server for tracking vehicle fuel cost.
+Its implemented in Java, Spring Boot and Postgres for storage. Exposed as a gRPC API.
+
+
