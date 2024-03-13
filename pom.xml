@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.1.5</version>
+        <version>3.2.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -20,17 +20,18 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
 
-        <google-api-common.version>2.22.0</google-api-common.version>
-        <grpc-google-common-protos.version>2.30.0</grpc-google-common-protos.version>
-        <grpc.version>1.60.1</grpc.version>
+        <google-api-common.version>2.28.0</google-api-common.version>
+        <grpc-google-common-protos.version>2.36.0</grpc-google-common-protos.version>
+        <grpc.version>1.62.2</grpc.version>
         <guava.version>33.0.0-jre</guava.version>
-        <junit-jupiter.version>5.10.1</junit-jupiter.version>
-        <proto-google-common-protos.version>2.30.0</proto-google-common-protos.version>
-        <protobuf.version>3.25.1</protobuf.version>
+        <junit-jupiter.version>5.10.2</junit-jupiter.version>
+        <proto-google-common-protos.version>2.36.0</proto-google-common-protos.version>
+        <protobuf.version>3.25.3</protobuf.version>
         <protoc.os.classifier>${os.detected.classifier}</protoc.os.classifier>
     </properties>
 
     <dependencies>
+        <!-- Alphabetical order. Versions are defined in dependencyManagement. Makes migration to multi-module easier. -->
         <dependency>
             <groupId>com.google.api</groupId>
             <artifactId>api-common</artifactId>
@@ -49,21 +50,43 @@
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
+            <artifactId>grpc-inprocess</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>grpc-protobuf</artifactId>
+            <artifactId>grpc-services</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-stub</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -120,7 +143,7 @@
             <dependency>
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
-                <version>2.24.1</version>
+                <version>2.26.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -166,9 +189,49 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>2.16.2</version>
+                <configuration>
+                    <!--                        <allowMajorUpdates>false</allowMajorUpdates>-->
+                    <!--                        <onlyProjectDependencies>true</onlyProjectDependencies>-->
+                    <!--                        <onlyUpgradable>true</onlyUpgradable>-->
+                    <processDependencyManagementTransitive>false</processDependencyManagementTransitive>
+                    <!--                        <processDependencyManagement>false</processDependencyManagement>-->
+                    <ruleSet xmlns="https://www.mojohaus.org/VERSIONS/RULE/2.1.0" comparisonMethod="maven" xsi:schemaLocation="https://www.mojohaus.org/VERSIONS/RULE/2.1.0 https://www.mojohaus.org/versions/versions-model/xsd/rule-2.1.0.xsd">
+                        <ignoreVersions>
+                            <ignoreVersion>
+                                <type>regex</type>
+                                <version>.+-SNAPSHOT</version>
+                            </ignoreVersion>
+                            <ignoreVersion>
+                                <type>regex</type>
+                                <version>(?i).+[-\.](alpha|beta|rc|m|redhat)(-?\d*|\d*)</version>
+                            </ignoreVersion>
+                        </ignoreVersions>
+                    </ruleSet>
+                </configuration>
+            </plugin>
         </plugins>
 
     </build>
+
+    <profiles>
+        <profile>
+            <id>apple-silicon</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <protoc.os.classifier>osx-x86_64</protoc.os.classifier>
+            </properties>
+        </profile>
+    </profiles>
+
 
 
 

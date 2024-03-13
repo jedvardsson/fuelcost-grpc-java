@@ -1,0 +1,20 @@
+spring.application.name: fuelcost
+
+server.port: 8000
+
+spring.main.allow-bean-definition-overriding: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+grpc:
+  port: 6566
+  await-termination: 30s
+
+logging:
+  level:
+    io.grpc.netty: WARN
+

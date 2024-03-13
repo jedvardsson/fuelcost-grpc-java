@@ -1,0 +1,3 @@
+grpc:
+  port: -1 # in-process
+  await-termination: 0
