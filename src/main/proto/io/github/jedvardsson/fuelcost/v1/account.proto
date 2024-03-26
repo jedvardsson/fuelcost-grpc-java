@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package io.github.jedvardsson.fuelcost.v1;
+
+option java_multiple_files = true;
+option java_package = "io.github.jedvardsson.fuelcost.v1";
+option java_outer_classname = "AccountProto";
+
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+
+
+service AccountService {
+  option (google.api.default_host) = "fuelcost.jedvardsson.github.io";
+
+  rpc CreateAccount(CreateAccountRequest) returns (Account) {
+    option (google.api.http) = {
+      post: "/v1/accounts"
+      body: "account"
+    };
+    option (google.api.method_signature) = "account";
+  }
+  rpc UpdateAccount(UpdateAccountRequest) returns (Account) {
+    option (google.api.http) = {
+      patch: "/v1/{account.name=accounts/*}"
+      body: "account"
+    };
+    option (google.api.method_signature) = "account";
+  }
+  rpc DeleteAccount(DeleteAccountRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=accounts/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  rpc GetAccount(GetAccountRequest) returns (Account) {
+    option (google.api.http) = {
+      get: "/v1/{name=accounts/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+  rpc ListAccounts(ListAccountsRequest) returns (ListAccountsResponse) {
+    option (google.api.http) = {
+      get: "/v1/accounts"
+    };
+  }
+}
+
+message CreateAccountRequest {
+  // The account to create.
+  Account account = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message UpdateAccountRequest {
+  // The account to update or create.
+  Account account = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message DeleteAccountRequest {
+  // Required. Name of the account to delete.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "fuelcost.jedvardsson.github.io/Account"
+  ];
+
+  // Optional. The etag known to the client for the expected state.
+  // Used for optimistic locking.
+  string etag = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message GetAccountRequest {
+  // The name of the account to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference).type = "fuelcost.jedvardsson.github.io/Account"
+  ];
+}
+
+message ListAccountsRequest {
+  // Maximum number of accounts to return.
+  int32 page_size = 2;
+
+  // The value returned by the last `ListAccountsResponse`; indicates that this is
+  // a continuation of a prior `ListAccounts` call, and that the system should
+  // return the next page of data.
+  string page_token = 3;
+}
+
+message ListAccountsResponse {
+  // The resulting accounts.
+  repeated Account accounts = 1;
+
+  // If not empty, indicates that there may be more topics that match the
+  // request; this value should be passed in a new `ListAccountsRequest`.
+  string next_page_token = 2;
+}
+
+
+message Account {
+  option (google.api.resource) = {
+    type: "fuelcost.jedvardsson.github.io/Account"
+    pattern: "accounts/{account}"
+  };
+
+  // The resource name of the account of the form `accounts/{account}`.
+  string name = 1 [
+    (google.api.field_behavior) = OUTPUT_ONLY,
+    (google.api.resource_reference).type = "fuelcost.jedvardsson.github.io/Account"
+  ];
+
+  google.protobuf.Timestamp create_time = 3 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  google.protobuf.Timestamp update_time = 4 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+
+  // The etag for this account.
+  // If this is provided on update, it must match the server's etag.
+  string etag = 5 [
+    (google.api.field_behavior) = OUTPUT_ONLY
+  ];
+}

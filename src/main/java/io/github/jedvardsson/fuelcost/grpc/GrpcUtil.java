@@ -4,7 +4,6 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 
-import java.util.Objects;
 import java.util.concurrent.Callable;
 
 public class GrpcUtil {

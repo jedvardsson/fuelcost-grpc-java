@@ -20,15 +20,14 @@ import java.util.concurrent.TimeUnit;
 
 @SpringBootTest(classes = ApplicationTestConfig.class)
 @ActiveProfiles({"test"})
-class GrpcReflectionServiceTest {
+class GrpcServerTest {
 
     private final ServerReflectionGrpc.ServerReflectionStub reflectionStub;
 
     @Autowired
-    public GrpcReflectionServiceTest(GrpcChannelWrapper channelWrapper) {
+    public GrpcServerTest(GrpcChannelWrapper channelWrapper) {
         reflectionStub = ServerReflectionGrpc.newStub(channelWrapper.getChannel());
     }
-
 
     private ServerReflectionResponse getServerReflectionInfo(ServerReflectionRequest request) {
         CompletableFuture<ServerReflectionResponse> future = new CompletableFuture<>();

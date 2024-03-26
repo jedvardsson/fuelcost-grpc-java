@@ -2,6 +2,8 @@ spring.application.name: fuelcost
 
 server.port: 8000
 
+spring.datasource.url: jdbc:postgresql://localhost:5432/fuelcost
+
 spring.main.allow-bean-definition-overriding: true
 
 management:

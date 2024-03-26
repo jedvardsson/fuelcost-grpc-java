@@ -1,0 +1,6 @@
+grpc:
+  port: -1 # in-process
+  await-termination: 0
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:16.2:///tv_user_profile_test_db
