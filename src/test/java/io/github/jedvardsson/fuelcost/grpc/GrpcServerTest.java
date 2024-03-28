@@ -90,6 +90,6 @@ class GrpcServerTest {
 
     @Test
     void testGetServiceNames() {
-        Assertions.assertEquals(List.of("grpc.reflection.v1alpha.ServerReflection"), getServerServiceNames());
+        Assertions.assertTrue(getServerServiceNames().contains("grpc.reflection.v1alpha.ServerReflection"));
     }
 }

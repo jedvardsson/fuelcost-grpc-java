@@ -1,8 +1,6 @@
 package io.github.jedvardsson.fuelcost.common;
 
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public final class Arguments {
 
@@ -13,6 +11,9 @@ public final class Arguments {
         return parse(value, field, Long::parseLong);
     }
 
+    public static long parseVehicleId(String value, String field) {
+        return parse(value, field, Long::parseLong);
+    }
 
     public static <V, T> T parse(V value, String field, Function<? super V, T> parser) {
         if (value == null || (value instanceof String s && s.isEmpty())) {

@@ -1,8 +1,6 @@
 package io.github.jedvardsson.fuelcost.account;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.google.protobuf.Timestamp;
-import com.google.protobuf.util.Timestamps;
 import io.github.jedvardsson.fuelcost.common.Arguments;
 import io.github.jedvardsson.fuelcost.common.PageTokens;
 import io.github.jedvardsson.fuelcost.common.VersionEtag;
@@ -42,31 +40,21 @@ public class AccountDao {
                 throw GrpcException.requiredArgument("account");
             }
 
-            Timestamp now = Timestamps.now();
-
             return h.createQuery("""
                             insert into account (version, create_time, update_time)
-                            values (:version, :create_time, :update_time)
+                            values (:version, statement_timestamp(), statement_timestamp())
                             returning account_id, version, create_time, update_time
                             """)
                     .bind("version", 1)
-                    .bind("create_time", now)
-                    .bind("update_time", now)
-                    .map(this::getAccountRow)
+                    .map(r -> request.getAccount().toBuilder()
+                            .setName(getAccountName(r).toString())
+                            .setEtag(formatVersionEtag(r))
+                            .setCreateTime(r.getColumn("create_time", Timestamp.class))
+                            .setUpdateTime(r.getColumn("update_time", Timestamp.class))
+                            .build())
                     .one();
         });
     }
-
-    @NotNull
-    private Account getAccountRow(RowView r) {
-        return Account.newBuilder()
-                .setName(new AccountName(r.getColumn("account_id", Long.class)).toString())
-                .setEtag(VersionEtag.format(r.getColumn("version", Long.class)))
-                .setCreateTime(r.getColumn("create_time", Timestamp.class))
-                .setUpdateTime(r.getColumn("update_time", Timestamp.class))
-                .build();
-    }
-
 
     @Transactional
     public Account updateAccount(UpdateAccountRequest request) {
@@ -80,19 +68,21 @@ public class AccountDao {
             AccountName key = Arguments.parse(name, "name", AccountName::parse);
             Long version = VersionEtag.tryParseVersion(account.getEtag());
 
-            Timestamp now = Timestamps.now();
-
             return h.createQuery("""
                             update account t set
                                 version = version + 1,
-                                update_time = :update_time
+                                update_time = statement_timestamp()
                             where t.account_id = :account_id and (:version is null or t.version = :version)
                             returning account_id, version, create_time, update_time
                             """)
                     .bind("account_id", key.accountId())
                     .bind("version", version)
-                    .bind("update_time", now)
-                    .map(this::getAccountRow)
+                    .map(r -> request.getAccount().toBuilder()
+                            .setName(getAccountName(r).toString())
+                            .setEtag(formatVersionEtag(r))
+                            .setCreateTime(r.getColumn("create_time", Timestamp.class))
+                            .setUpdateTime(r.getColumn("update_time", Timestamp.class))
+                            .build())
                     .findFirst()
                     .orElseThrow(() -> version == null ? GrpcException.notFound(name) : GrpcException.etagNotMatching(name));
         });
@@ -105,7 +95,7 @@ public class AccountDao {
         Long version = VersionEtag.parseOptionalVersion(request.getEtag()).orElse(null);
         dbClient.withHandle(h -> h.createQuery("""
                         delete from account t where t.account_id = :account_id and (:version is null or t.version = :version)
-                        returning account_id, version, create_time, update_time
+                        returning account_id, version
                         """)
                 .bind("account_id", key.accountId())
                 .bind("version", version)
@@ -125,13 +115,12 @@ public class AccountDao {
         return getAccount(AccountName.parse(name));
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Optional<Account> getAccount(AccountName name) {
         return getAccounts(List.of(name)).stream().findFirst();
     }
 
     private List<Account> getAccounts(List<AccountName> names) {
-        List<AccountName> distinctNames = names.stream().distinct().toList();
         return dbClient.withHandle(h -> h.createQuery("""
                         select
                             t.account_id,
@@ -142,25 +131,28 @@ public class AccountDao {
                         join account t on t.account_id = x.account_id
                         order by x.ord
                         """)
-                .bind("account_ids", distinctNames.stream().mapToLong(AccountName::accountId).toArray())
-                .map(this::getAccountRow)
+                .bind("account_ids", names.stream().mapToLong(AccountName::accountId).toArray())
+                .map(r -> Account.newBuilder()
+                        .setName(getAccountName(r).toString())
+                        .setEtag(formatVersionEtag(r))
+                        .setCreateTime(r.getColumn("create_time", Timestamp.class))
+                        .setUpdateTime(r.getColumn("update_time", Timestamp.class))
+                        .build())
                 .list());
     }
 
-    @JsonFormat(shape = JsonFormat.Shape.ARRAY)
-    private record PageToken(long accountId) {
-        private static Optional<PageToken> parseOptional(String s) {
-            return PageTokens.parseOptional(s, PageToken.class);
-        }
+    @NotNull
+    private static String formatVersionEtag(RowView r) {
+        return VersionEtag.format(r.getColumn("version", Long.class));
+    }
 
-        private static String format(AccountName name) {
-            return PageTokens.format(new PageToken(name.accountId()));
-        }
+    private static AccountName getAccountName(RowView r) {
+        return new AccountName(r.getColumn("account_id", Long.class));
     }
 
     @Transactional(readOnly = true)
     public ListAccountsResponse listAccounts(ListAccountsRequest request) {
-        PageToken pageToken = PageToken.parseOptional(request.getPageToken()).orElseGet(() -> new PageToken(0L));
+        AccountName pageToken = PageTokens.parseOptional(request.getPageToken(), AccountName.class).orElseGet(() -> new AccountName(0L));
         int pageSize = request.getPageSize() <= 0 ? DEFAULT_PAGE_SIZE : Math.min(MAX_PAGE_SIZE, request.getPageSize());
 
         return dbClient.withHandle(h -> {
@@ -174,12 +166,12 @@ public class AccountDao {
                             """)
                     .bind("page_token_account_id", pageToken.accountId())
                     .bind("page_size", pageSize)
-                    .map(r -> new AccountName(r.getColumn("account_id", Long.class)))
+                    .map(r -> getAccountName(r))
                     .list();
 
             var entities = getAccounts(names);
             int size = names.size();
-            String nextPageToken = size != pageSize ? "" : PageToken.format(names.get(size - 1));
+            String nextPageToken = size != pageSize ? "" : PageTokens.format(names.get(size - 1));
             return ListAccountsResponse.newBuilder()
                     .addAllAccounts(entities)
                     .setNextPageToken(nextPageToken)

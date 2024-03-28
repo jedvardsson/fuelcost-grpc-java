@@ -24,6 +24,10 @@ public record AccountName(long accountId) implements Comparable<AccountName> {
         return new AccountName(m);
     }
 
+    public static String format(long accountId) {
+        return new AccountName(accountId).toString();
+    }
+
     @JsonValue
     public String toString() {
         return TEMPLATE.instantiate("account", Long.toString(accountId));

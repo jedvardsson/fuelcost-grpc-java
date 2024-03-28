@@ -25,6 +25,10 @@ public class AccountClient {
         accountStub = AccountServiceGrpc.newBlockingStub(wrapper.getChannel());
     }
 
+    public Account createEmptyAccount() {
+        return createAccount(Account.getDefaultInstance());
+    }
+
     public Account createAccount(Account account) {
         return accountStub.createAccount(CreateAccountRequest.newBuilder().setAccount(account).build());
     }
